@@ -60,8 +60,7 @@ EVAL/
 
 ## 运行前提
 
-需要本机安装 **真实的 Python 3.10+**（当前这台机器只有 Microsoft Store 的 `python`
-别名占位符，不能执行代码，需先 `winget install Python.Python.3.11` 并重开终端）。
+需要本机安装 **真实的 Python 3.10+**。
 核心评测链路只用标准库；只有 Web 层需要 `requirements.txt` 里的三方库。
 
 ## 快速开始
