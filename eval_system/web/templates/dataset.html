@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}数据集 {{ name }}{% endblock %}
+{% block body %}
+
+<div class="card">
+  <h2>数据集：{{ name }}</h2>
+  <p class="mut">
+    共 {{ cases|length }} 条用例 ·
+    {% for t, n in type_counts.items() %}
+      {% if t == "deterministic" %}确定性 {{ n }} 条{% else %}生成式 {{ n }} 条{% endif %}{% if not loop.last %} · {% endif %}
+    {% endfor %}
+  </p>
+  <p class="mut">
+    <span class="pill" style="background:rgba(56,139,253,.2);color:var(--accent)">确定性 → 规则裁判</span>
+    <span class="pill" style="background:rgba(163,113,247,.2);color:#a371f7">生成式 → LLM 裁判</span>
+  </p>
+</div>
+
+<div class="card" id="add-case">
+  <h2>新增用例</h2>
+  <form action="/cases/add" method="post">
+    <input type="hidden" name="dataset" value="{{ name }}">
+    <label>任务类型</label>
+    <select name="task_type" id="task_type" onchange="toggleFields()">
+      <option value="deterministic">确定性（有标准答案 → 规则裁判）</option>
+      <option value="generative">生成式（开放式 → LLM 裁判）</option>
+    </select>
+
+    <label>输入（给 Agent 的任务）</label>
+    <input type="text" name="input" required placeholder="如：计算 12 + 30 * 2 的结果是多少？" style="width:100%;">
+
+    <div id="field-answer">
+      <label>期望答案（确定性用例）</label>
+      <input type="text" name="expected_answer" placeholder="如：72" style="width:100%;">
+    </div>
+
+    <div id="field-rubric" style="display:none;">
+      <label>评分标准 rubric（生成式用例）</label>
+      <input type="text" name="rubric" placeholder="如：答案应覆盖要点，结构完整，有依据。" style="width:100%;">
+    </div>
+
+    <label>期望工具（逗号分隔，可空）</label>
+    <input type="text" name="expected_tools" placeholder="如：calculator" style="width:100%;">
+
+    <label>标签（逗号分隔，可空）</label>
+    <input type="text" name="tags" placeholder="如：arithmetic, easy" style="width:100%;">
+
+    <div style="margin-top:14px;"><button type="submit">添加用例</button></div>
+  </form>
+  <script>
+    function toggleFields() {
+      var t = document.getElementById('task_type').value;
+      document.getElementById('field-answer').style.display = (t === 'deterministic') ? '' : 'none';
+      document.getElementById('field-rubric').style.display = (t === 'generative') ? '' : 'none';
+    }
+    toggleFields();
+  </script>
+</div>
+
+<div class="card">
+  <h2>用例明细</h2>
+  <table>
+    <tr>
+      <th>#</th><th>类型</th><th>输入（任务）</th>
+      <th>期望答案 / 评分标准</th><th>期望工具</th><th>标签</th><th>操作</th>
+    </tr>
+    {% for c in cases %}
+    <tr>
+      <td class="mut">{{ loop.index }}</td>
+      <td>
+        {% if c.task_type.value == "deterministic" %}
+          <span class="pill" style="background:rgba(56,139,253,.2);color:var(--accent)">确定性</span>
+        {% else %}
+          <span class="pill" style="background:rgba(163,113,247,.2);color:#a371f7">生成式</span>
+        {% endif %}
+      </td>
+      <td>{{ c.input }}</td>
+      <td class="mut">
+        {% if c.task_type.value == "deterministic" %}
+          期望答案：<code>{{ c.expected_answer }}</code>
+        {% else %}
+          rubric：{{ c.rubric }}
+        {% endif %}
+      </td>
+      <td class="mut">
+        {% if c.expected_tools %}{{ c.expected_tools|join(", ") }}{% else %}-{% endif %}
+      </td>
+      <td class="mut">
+        {% if c.tags %}{{ c.tags|join(", ") }}{% else %}-{% endif %}
+      </td>
+      <td>
+        <form action="/cases/{{ c.id }}/delete" method="post"
+              onsubmit="return confirm('确认删除这条用例？');" style="margin:0;">
+          <input type="hidden" name="dataset" value="{{ name }}">
+          <button type="submit" class="btn-danger">删除</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7" class="mut">该数据集暂无用例</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <a href="/#trigger">← 返回，去触发评测</a>
+</div>
+
+{% endblock %}

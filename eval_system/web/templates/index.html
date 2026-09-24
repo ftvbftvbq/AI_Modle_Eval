@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block body %}
+
+<div class="card" id="trigger">
+  <h2>触发评测</h2>
+
+  <div style="background:#0d1117;border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:16px;">
+    <strong>两种使用模式（同一套评测，用途不同）：</strong>
+    <table style="margin-top:8px;">
+      <tr><th>模式</th><th>目的</th><th>怎么用</th><th>结果怎么看</th></tr>
+      <tr>
+        <td><span class="pill" style="background:rgba(56,139,253,.2);color:var(--accent)">选型对比</span></td>
+        <td>横向比较多个模型，挑出最合适的</td>
+        <td>在下方<strong>多选模型</strong>，一次跑多个</td>
+        <td>看报告的模型对比矩阵（按平均分排序）</td>
+      </tr>
+      <tr>
+        <td><span class="pill ok">CI 回归门禁</span></td>
+        <td>防止某个模型/版本质量退化，卡上线</td>
+        <td>命令行 <code>python run_ci.py --dataset smoke --threshold 0.7</code></td>
+        <td>低于阈值即判失败、返回非零退出码，阻断流水线</td>
+      </tr>
+    </table>
+    <p class="mut" style="margin:8px 0 0;">
+      简言之：<strong>选型对比</strong>关心「哪个模型更好」，是相对排名；
+      <strong>CI 门禁</strong>关心「够不够格上线」，是绝对阈值判定。两者跑的是同一套用例与评分。
+    </p>
+  </div>
+
+  {% if datasets and models %}
+  <form action="/trigger" method="post">
+    <label>数据集</label>
+    <select name="dataset">
+      {% for d in datasets %}
+      <option value="{{ d.name }}">{{ d.name }}（{{ d.case_count }} 条）</option>
+      {% endfor %}
+    </select>
+    <label>选择模型（可多选，Ctrl/Cmd 点选）</label>
+    <select name="models" multiple size="{{ models|length if models|length < 6 else 6 }}">
+      {% for m in models %}
+      <option value="{{ m }}" selected>{{ m }}</option>
+      {% endfor %}
+    </select>
+    <div style="margin-top:14px;"><button type="submit">开始评测</button></div>
+  </form>
+  {% else %}
+  <p class="mut">还没有数据集。先运行 <code>python seed_dataset.py</code> 生成示例数据集。</p>
+  {% endif %}
+</div>
+
+<div class="card" id="datasets">
+  <h2>数据集</h2>
+  <p class="mut">点击数据集名称可查看里面的每一条具体用例，并在详情页新增 / 删除用例。</p>
+
+  <div style="background:#0d1117;border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:14px;">
+    <strong>新建数据集：</strong>输入一个新名字进入空数据集，再在详情页添加用例即可。
+    <form onsubmit="location.href='/datasets/'+encodeURIComponent(document.getElementById('newds').value.trim())+'#add-case'; return false;"
+          style="display:inline-flex; gap:8px; margin-left:8px;">
+      <input type="text" id="newds" placeholder="如 my-dataset" required>
+      <button type="submit">创建 / 进入</button>
+    </form>
+  </div>
+
+  <table>
+    <tr><th>名称</th><th>用例数</th><th></th></tr>
+    {% for d in datasets %}
+    <tr>
+      <td><a href="/datasets/{{ d.name }}">{{ d.name }}</a></td>
+      <td>{{ d.case_count }}</td>
+      <td><a href="/datasets/{{ d.name }}">查看用例 →</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3" class="mut">无</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card" id="runs">
+  <h2>历史运行</h2>
+  <table>
+    <tr><th>运行 ID</th><th>数据集</th><th>模型</th><th>状态</th></tr>
+    {% for r in runs %}
+    <tr>
+      <td><a href="/runs/{{ r.id }}">{{ r.id }}</a></td>
+      <td>{{ r.dataset }}</td>
+      <td class="mut">{{ r.models|join(", ") }}</td>
+      <td>
+        {% if r.status == "completed" %}<span class="pill ok">已完成</span>
+        {% elif r.status == "failed" %}<span class="pill bad">失败</span>
+        {% elif r.status == "running" %}<span class="pill">运行中</span>
+        {% else %}<span class="pill">{{ r.status }}</span>{% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4" class="mut">暂无运行</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}设置{% endblock %}
+{% block body %}
+
+<div class="card">
+  <h2>通用设置</h2>
+  <p class="mut">这些配置存于数据库，保存后即时生效，无需改代码或重启。留空则恢复到原始默认值。</p>
+  <form action="/settings/save" method="post">
+    <table>
+      <tr><th>配置项</th><th>说明</th><th>当前值</th></tr>
+      {% for it in items %}
+      <tr>
+        <td>{{ it.label }}</td>
+        <td class="mut">{{ it.help }}</td>
+        <td>
+          {% if it.key == "judge_model" %}
+            <select name="{{ it.key }}">
+              {% for m in all_models %}
+              <option value="{{ m }}" {% if m == it.value %}selected{% endif %}>{{ m }}</option>
+              {% endfor %}
+            </select>
+          {% elif it.key == "enable_cache" %}
+            <select name="{{ it.key }}">
+              <option value="1" {% if it.value %}selected{% endif %}>启用</option>
+              <option value="0" {% if not it.value %}selected{% endif %}>关闭</option>
+            </select>
+          {% else %}
+            <input type="text" name="{{ it.key }}" value="{{ it.value }}">
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+    <div style="margin-top:14px;"><button type="submit">保存设置</button></div>
+  </form>
+</div>
+
+<div class="card">
+  <h2>模型接入</h2>
+  <p class="mut">
+    默认已内置 mock 模型（mock-smart / mock-fast / mock-judge）用于演示。
+    在此可接入真实模型（OpenAI 兼容端点），或添加更多 mock 模型。
+  </p>
+  <table>
+    <tr><th>名称</th><th>类型</th><th>真实模型</th><th>端点</th><th>Key 环境变量</th><th>裁判</th><th>操作</th></tr>
+    {% for m in model_configs %}
+    <tr>
+      <td><strong>{{ m.name }}</strong></td>
+      <td>{{ m.kind }}</td>
+      <td class="mut">{{ m.model or "-" }}</td>
+      <td class="mut">{{ m.base_url or "-" }}</td>
+      <td class="mut">{{ m.api_key_env or "-" }}</td>
+      <td>{% if m.is_judge %}是{% else %}-{% endif %}</td>
+      <td>
+        <form action="/settings/models/{{ m.name }}/delete" method="post"
+              onsubmit="return confirm('删除该模型配置？');" style="margin:0;">
+          <button type="submit" class="btn-danger">删除</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7" class="mut">暂无自定义模型（仍可用内置 mock 模型）</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <h2>新增模型</h2>
+  <form action="/settings/models/add" method="post">
+    <label>模型名称（系统内唯一标识）</label>
+    <input type="text" name="name" required placeholder="如 gpt-4o-mini" style="width:100%;">
+
+    <label>类型</label>
+    <select name="kind" id="kind" onchange="toggleKind()">
+      <option value="openai">OpenAI 兼容（真实模型，需 API Key）</option>
+      <option value="mock">Mock（演示用，无需 Key）</option>
+    </select>
+
+    <div id="openai-fields">
+      <label>真实模型名（传给 API 的 model 参数）</label>
+      <input type="text" name="model" placeholder="如 gpt-4o-mini" style="width:100%;">
+      <label>API 端点 base_url</label>
+      <input type="text" name="base_url" placeholder="https://api.openai.com/v1" style="width:100%;">
+      <label>API Key 环境变量名（Key 存环境变量，不入库）</label>
+      <input type="text" name="api_key_env" placeholder="OPENAI_API_KEY" style="width:100%;">
+      <label>每 1K token 价格（可选，用于成本统计）</label>
+      <input type="text" name="price_per_1k" value="0" style="width:100%;">
+    </div>
+
+    <div id="mock-fields" style="display:none;">
+      <label>质量 quality（0~1，越高越"聪明"）</label>
+      <input type="text" name="quality" value="0.8" style="width:100%;">
+    </div>
+
+    <label style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;">
+      <input type="checkbox" name="is_judge" value="1"> 可作为裁判模型
+    </label>
+
+    <div style="margin-top:14px;"><button type="submit">添加模型</button></div>
+  </form>
+  <script>
+    function toggleKind() {
+      var k = document.getElementById('kind').value;
+      document.getElementById('openai-fields').style.display = (k === 'openai') ? '' : 'none';
+      document.getElementById('mock-fields').style.display = (k === 'mock') ? '' : 'none';
+    }
+    toggleKind();
+  </script>
+</div>
+
+{% endblock %}

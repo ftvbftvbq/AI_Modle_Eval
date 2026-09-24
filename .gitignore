@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# 评测数据与缓存（不入库，可由 seed_dataset.py 重建）
+data/*.db
+data/*.db-journal
+data/cache/*
+data/datasets/*
+!data/cache/.gitkeep
+!data/datasets/.gitkeep
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# 环境变量（含 API Key，禁止提交）
+.env

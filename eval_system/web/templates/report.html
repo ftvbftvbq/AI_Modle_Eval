@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}运行报告 {{ report.run_id }}{% endblock %}
+
+{# 任务类型英文 -> 中文显示映射 #}
+{% macro type_zh(t) -%}
+{%- if t == "deterministic" -%}确定性
+{%- elif t == "generative" -%}生成式
+{%- else -%}{{ t }}{%- endif -%}
+{%- endmacro %}
+
+{# Agent 终止原因英文 -> 中文显示映射 #}
+{% macro stop_zh(s) -%}
+{%- if s == "completed" -%}正常完成
+{%- elif s == "loop_detected" -%}检测到循环
+{%- elif s == "budget_exhausted" -%}超出步数预算
+{%- elif s == "error" -%}执行出错
+{%- else -%}{{ s }}{%- endif -%}
+{%- endmacro %}
+
+{# 运行状态英文 -> 中文显示映射 #}
+{% macro status_zh(s) -%}
+{%- if s == "completed" -%}已完成
+{%- elif s == "running" -%}运行中
+{%- elif s == "failed" -%}失败
+{%- else -%}{{ s }}{%- endif -%}
+{%- endmacro %}
+
+{% block body %}
+
+<div class="card">
+  <h2>运行报告</h2>
+  <p class="mut">
+    Run <code>{{ report.run_id }}</code> · 数据集 <code>{{ report.dataset }}</code>
+    · 状态 {{ status_zh(report.status) }} · 结果数 {{ report.total_results }}
+  </p>
+</div>
+
+<div class="card">
+  <h2>模型对比（按平均分排序）</h2>
+  <p class="mut">达标线：平均分 ≥ <strong>{{ threshold }}</strong> 判为达标（绿），低于则不达标（红）。</p>
+  <table>
+    <tr>
+      <th>#</th><th>模型</th><th>平均分</th><th>是否达标</th><th>通过率</th>
+      <th>中位数</th><th>P10</th><th>P90</th><th>分任务类型</th><th>错误</th>
+    </tr>
+    {% for m in report.model_summaries %}
+    {% set ok = m.avg_score >= threshold %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td><strong>{{ m.model }}</strong></td>
+      <td>
+        <div class="bar"><span style="width: {{ (m.avg_score*100)|round(0,'floor') }}%; background: {{ 'var(--ok)' if ok else 'var(--bad)' }};"></span></div>
+        <span style="color: {{ 'var(--ok)' if ok else 'var(--bad)' }}; font-weight:600;">{{ m.avg_score }}</span>
+      </td>
+      <td>
+        {% if ok %}<span class="pill ok">达标</span>
+        {% else %}<span class="pill bad">未达标</span>{% endif %}
+      </td>
+      <td>{{ (m.pass_rate*100)|round(0,'floor') }}%</td>
+      <td>{{ m.median_score }}</td>
+      <td>{{ m.p10 }}</td>
+      <td>{{ m.p90 }}</td>
+      <td class="mut">
+        {% for t, v in m.by_task_type.items() %}{{ type_zh(t) }}={{ v }} {% endfor %}
+      </td>
+      <td>{% if m.error_count %}<span class="pill bad">{{ m.error_count }}</span>{% else %}0{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <h2>失败用例下钻（{{ report.failures|length }}）</h2>
+  <table>
+    <tr><th>模型</th><th>用例</th><th>类型</th><th>分数</th><th>终止原因</th><th>裁判理由</th></tr>
+    {% for f in report.failures %}
+    <tr>
+      <td>{{ f.model }}</td>
+      <td class="mut">{{ f.case_id }}</td>
+      <td>{{ type_zh(f.task_type) }}</td>
+      <td><span style="color:var(--bad); font-weight:600;">{{ f.score }}</span></td>
+      <td>{{ stop_zh(f.stopped_reason) }}</td>
+      <td class="mut">{{ f.reason }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6" class="mut">全部通过 🎉</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% endblock %}

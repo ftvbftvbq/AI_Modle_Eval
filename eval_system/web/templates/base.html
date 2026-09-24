@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Agent 评测系统{% endblock %}</title>
+  <style>
+    :root { --bg:#0f1720; --card:#182430; --line:#26333f; --fg:#e6edf3; --mut:#8b98a5; --ok:#2ea043; --bad:#f85149; --accent:#388bfd; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, "Segoe UI", sans-serif; background:var(--bg); color:var(--fg); }
+    header { padding:16px 24px; border-bottom:1px solid var(--line); display:flex; gap:16px; align-items:center; }
+    header a { color:var(--accent); text-decoration:none; }
+    .nav { display:flex; gap:6px; align-items:center; }
+    .nav a { padding:6px 12px; border-radius:6px; font-size:14px; }
+    .nav a:hover { background:var(--card); }
+    html { scroll-behavior:smooth; }
+    .card[id] { scroll-margin-top:80px; }
+    h1 { font-size:18px; margin:0; }
+    main { padding:24px; max-width:1100px; margin:0 auto; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px; margin-bottom:20px; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); }
+    th { color:var(--mut); font-weight:600; }
+    .bar { height:8px; background:#0d1117; border-radius:4px; overflow:hidden; }
+    .bar > span { display:block; height:100%; background:var(--accent); }
+    .pill { padding:2px 8px; border-radius:12px; font-size:12px; }
+    .pill.ok { background:rgba(46,160,67,.2); color:var(--ok); }
+    .pill.bad { background:rgba(248,81,73,.2); color:var(--bad); }
+    .mut { color:var(--mut); }
+    button, select { font:inherit; }
+    button { background:var(--accent); color:#fff; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; }
+    button.btn-danger { background:transparent; color:var(--bad); border:1px solid var(--bad); padding:4px 10px; font-size:13px; }
+    button.btn-danger:hover { background:rgba(248,81,73,.15); }
+    input[type=text] { background:#0d1117; color:var(--fg); border:1px solid var(--line); border-radius:6px; padding:8px; margin-top:2px; }
+    select { background:#0d1117; color:var(--fg); border:1px solid var(--line); border-radius:6px; padding:6px; }
+    select[multiple] { min-width:180px; }
+    label { display:block; margin:8px 0 4px; color:var(--mut); font-size:13px; }
+    code { background:#0d1117; padding:1px 5px; border-radius:4px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🧪 Agent 评测系统</h1>
+    <nav class="nav">
+      <a href="/">首页</a>
+      <a href="/#trigger">触发评测</a>
+      <a href="/#datasets">数据集列表</a>
+      <a href="/#runs">历史运行</a>
+      <a href="/settings">设置</a>
+    </nav>
+  </header>
+  <main>{% block body %}{% endblock %}</main>
+</body>
+</html>
